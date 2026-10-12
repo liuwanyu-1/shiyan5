@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       https://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/aop
+       https://www.springframework.org/schema/aop/spring-aop.xsd">
+
+<!--    spring创建dataSource 实例-->
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver"/>
+        <property name="url"
+                  value="jdbc:mysql://localhost:3306/design?serverTimezone=Asia/Shanghai"/>
+        <property name="username" value="root"/>
+        <property name="password" value="123456"/>
+    </bean>
+
+<!--    sqlSessionFactory-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="typeAliasesPackage" value="lwy.study.spring.vo"/>
+    </bean>
+
+<!--    扫描mapper.xml文件, 利用sqlSessionFactory创建mapper接口的实例-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+<!--        mapper接口包位置-->
+        <property name="basePackage" value="lwy.study.spring.mapper"/>
+    </bean>
+
+    <context:component-scan base-package="lwy.study.spring.service.impl,lwy.study.spring.aop"/>
+
+<!--    <bean id="myAdvice" class="lwy.study.spring.aop.MyAdvice"/>-->
+
+    <aop:config>
+        <aop:pointcut id="loginPointcut"
+                      expression="execution(* lwy.study.spring.service.impl.*.*(..))"/>
+<!--        将切面对应的类用ref引用到此-->
+        <aop:aspect ref="myAdvice">
+<!--            <aop:before method="myBefore" pointcut-ref="loginPointcut"/>-->
+            <aop:before method="myBefore"
+                        pointcut="execution(Boolean lwy.study.spring.service.impl.AdminServiceImpl.login(String,String))
+                        and args(email,password)"
+                        arg-names="email,password"/>
+            <aop:after method="myAfter" pointcut-ref="loginPointcut"/>
+            <aop:after-returning method="myAfterReturning" pointcut-ref="loginPointcut"/>
+            <aop:around method="myAround" pointcut-ref="loginPointcut"/>
+            <aop:after-throwing method="myThrowingAdvice" pointcut-ref="loginPointcut" throwing="e"/>
+        </aop:aspect>
+    </aop:config>
+
+</beans>
